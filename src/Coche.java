@@ -1,13 +1,21 @@
+import java.util.List;
+
 public class Coche {
 
     private String brand;
     private String model;
     private String tuition;
 
+    private static List<Coche> carList;
+
     public Coche(String brand, String model, String tuition) {
         this.brand = brand;
         this.model = model;
         this.tuition = tuition;
+    }
+
+    public static List<Coche> getCarList() {
+        return carList;
     }
 
     public String getBrand() {
