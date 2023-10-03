@@ -121,20 +121,22 @@ public class Fichero {
      */
     public void insetar(Coche coche,int posicion,int numeroBytes) throws IOException {
 
-        if(posicion < 0 || posicion > numeroRegistros){
+
+        if(posicion < 0){
             throw new IllegalArgumentException("La posición no es válida");
         }else if(numeroBytes < 0 || numeroBytes > longitudRegistro){
             throw new IllegalArgumentException("El número de bytes no es válido");
         }else if(coche == null){
             throw new IllegalArgumentException("El coche no puede ser null");
         }else if(coche.getTuition().length() > BYTES_MATRICULA){
-            throw new IllegalArgumentException("La matrícula debe tener 7 caracteres");
+            throw new IllegalArgumentException("La matrícula debe tener 7 bytes");
         }else if(coche.getModel().length() > BYTES_MODELO){
-            throw new IllegalArgumentException("El modelo debe tener 32 caracteres");
+            throw new IllegalArgumentException("El modelo debe tener 32 bytes");
         } else if (coche.getBrand().length() > BYTES_MARCA) {
-            throw new IllegalArgumentException("La marca debe tener 32 caracteres");
-        }else if(cocheList.contains(coche)){
-            throw new IllegalArgumentException("El coche ya existe");
+            throw new IllegalArgumentException("La marca debe tener 32 bytes");
+        }
+        if(existeCoche(coche)) {
+            System.err.println("El coche ya existe");
         }else{
             RandomAccessFile raf = new RandomAccessFile(fileName, "rw");
             raf.seek((long) posicion * longitudRegistro);
@@ -142,12 +144,28 @@ public class Fichero {
             raf.write(coche.getModel().getBytes());
             raf.write(coche.getBrand().getBytes());
             raf.close();
+            //Lo utilizamos para saber lo que están repetidos.
             cocheList.add(coche);
         }
 
 
     }
 
+    /**
+     * Comprueba si un coche existe en el fichero.
+     * @param coche Coche que queremos comprobar si existe.
+     * @return true si existe, false si no existe.
+     */
+    public boolean existeCoche(Coche coche){
+        boolean existe = false;
+        for (Coche c : cocheList) {
+            if(c.equals(coche)){
+                existe = true;
+                break;
+            }
+        }
+        return existe;
+    }
 
     public static void main(String[] args) {
 
@@ -160,10 +178,11 @@ public class Fichero {
             Coche coche = new Coche("Seat", "Ibiza", "1234ABC");
             fichero.insetar(coche, 0, fichero.NUMBER_OF_BYTES);
             Coche coche2 = new Coche("Seat", "Ibiza", "1234ABC");
-            fichero.insetar(coche2, 0, fichero.NUMBER_OF_BYTES);
+            fichero.insetar(coche2, 1, fichero.NUMBER_OF_BYTES);
             Coche coche3 = new Coche("Seat", "Leon", "1684ABC");
-            fichero.insetar(coche3, 0, fichero.NUMBER_OF_BYTES);
-            System.out.println("Coche insertado");
+            fichero.insetar(coche3, 2, fichero.NUMBER_OF_BYTES);
+            Coche coche4 = new Coche("Seat", "Ateca", "6984ABC");
+            fichero.insetar(coche4, 3, fichero.NUMBER_OF_BYTES);
         } catch (IOException ex) {
             System.out.println(ex.getMessage());
         }

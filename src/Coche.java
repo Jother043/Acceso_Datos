@@ -1,4 +1,5 @@
 import java.util.List;
+import java.util.Objects;
 
 public class Coche {
 
@@ -45,5 +46,18 @@ public class Coche {
     @Override
     public String toString() {
         return "Coche{" + "brand=" + brand + ", model=" + model + ", tuition=" + tuition + '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Coche coche = (Coche) o;
+        return Objects.equals(brand, coche.brand) && Objects.equals(model, coche.model) && Objects.equals(tuition, coche.tuition);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(brand, model, tuition);
     }
 }
