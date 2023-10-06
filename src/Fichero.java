@@ -1,26 +1,22 @@
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
 import java.io.*;
 
 public class Fichero {
-    private static List<Coche> cocheList;
-    private final String fileName;
+    static Scanner sc = new Scanner(System.in);
+    private static List<Coche> cocheList = new ArrayList<>();
+    private static  String fileName ;
     private final String campoClave;
     public static final byte BYTES_MATRICULA = 7;
     public static final byte BYTES_MODELO = 32;
     public static final byte BYTES_MARCA = 32;
-    private int longitudRegistro;
-    private long numeroRegistros;
-    private final int NUMBER_OF_BYTES = 71;
+    private static int longitudRegistro;
+    private static long numeroRegistros;
+    private static final int NUMBER_OF_BYTES = 71;
 
     public String getFileName() {
         return fileName;
     }
-
-
 
 
     public Fichero(String fileName, Map<String, Integer> datos, String campoClave) throws IOException {
@@ -62,39 +58,39 @@ public class Fichero {
      * Si la longitud del modelo es mayor que 32 lanza una excepción.
      * Si la longitud de la marca es mayor que 32 lanza una excepción.
      * Si no se cumple ninguna de las condiciones anteriores inserta el coche en el fichero.
+     *
      * @param coche
      * @param posicion
      * @param numeroBytes
      * @throws IOException
      */
-    public void insetar(Coche coche,int posicion,int numeroBytes) throws IOException {
+    public static void insetar(Coche coche, int posicion, int numeroBytes) throws IOException {
 
 
-        if(posicion < 0 ){
+        if (posicion < 0) {
             throw new IllegalArgumentException("La posición no es válida");
-        }else if(numeroBytes < 0 || numeroBytes > longitudRegistro){
+        } else if (numeroBytes < 0) {
             throw new IllegalArgumentException("El número de bytes no es válido");
-        }else if(coche == null){
+        } else if (coche == null) {
             throw new IllegalArgumentException("El coche no puede ser null");
         }
         //Comprobamos que la longitud de los campos no sea mayor que la longitud de los bytes.
-        if(coche.getTuition().getBytes().length > BYTES_MATRICULA) {
+        if (coche.getTuition().getBytes().length > BYTES_MATRICULA) {
             throw new IllegalArgumentException("La matrícula no puede tener más de 7 bytes");
-        }else if(coche.getModel().getBytes().length > BYTES_MODELO){
+        } else if (coche.getModel().getBytes().length > BYTES_MODELO) {
             throw new IllegalArgumentException("El modelo no puede tener más de 32 bytes");
-        }else if(coche.getBrand().getBytes().length > BYTES_MARCA){
+        } else if (coche.getBrand().getBytes().length > BYTES_MARCA) {
             throw new IllegalArgumentException("La marca no puede tener más de 32 bytes");
-        }else{
+        } else {
             //si no es mayor lo rellenamos con espacios en blanco.
             coche.setTuition(String.format("%-7s", coche.getTuition()));
             coche.setModel(String.format("%-32s", coche.getModel()));
             coche.setBrand(String.format("%-32s", coche.getBrand()));
         }
 
-        //Si existe el coche no lo insertamos.
-        if(existeCoche(coche)) {
+        if (existeCoche(coche)) {
             System.err.println("El coche ya existe");
-        }else{
+        } else {
             RandomAccessFile raf = new RandomAccessFile(fileName, "rw");
             //Nos posicionamos en la posición que queremos insertar el registro.
             raf.seek((long) posicion * longitudRegistro);
@@ -103,21 +99,22 @@ public class Fichero {
             raf.write(coche.getModel().getBytes());
             raf.close();
             //Lo utilizamos para saber lo que están repetidos.
-            cocheList.add(coche);
         }
 
+        cocheList.add(coche);
 
     }
 
     /**
      * Comprueba si un coche existe en el fichero.
+     *
      * @param coche Coche que queremos comprobar si existe.
      * @return true si existe, false si no existe.
      */
-    public boolean existeCoche(Coche coche){
+    public static boolean existeCoche(Coche coche) {
         boolean existe = false;
         for (Coche c : cocheList) {
-            if(c.equals(coche)){
+            if (c.equals(coche)) {
                 existe = true;
                 break;
             }
@@ -125,26 +122,172 @@ public class Fichero {
         return existe;
     }
 
+    public static void borrar(int posicion) throws IOException {
+        RandomAccessFile raf = new RandomAccessFile(fileName, "rw");
+        raf.seek((long) posicion * longitudRegistro);
+        raf.writeBytes(String.format("%-71s", ""));
+        raf.close();
+    }
+
+    public static void modificar(Coche coche, int posicion) throws IOException {
+        RandomAccessFile raf = new RandomAccessFile(fileName, "rw");
+        raf.seek((long) posicion * longitudRegistro);
+        raf.write(coche.getTuition().getBytes());
+        raf.write(coche.getBrand().getBytes());
+        raf.write(coche.getModel().getBytes());
+        raf.close();
+    }
+
+    public static void ordenarFichero(String fileName){
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(fileName));
+            String line = br.readLine();
+            String[] campos;
+            //Leemos el fichero y lo guardamos en una lista.
+            while (line != null) {
+                campos = line.split(",");
+                Coche coche = new Coche(campos[0], campos[1], campos[2]);
+                cocheList.add(coche);
+                line = br.readLine();
+            }
+            br.close();
+            //Ordenamos la lista por matrícula con una clase anónima.
+            Collections.sort(cocheList , new Comparator<Coche>() {
+                @Override
+                public int compare(Coche o1, Coche o2) {
+                    return o1.getTuition().compareTo(o2.getTuition());
+                }
+            });
+            //Escribimos la lista ordenada en el fichero.
+            FileWriter fw = new FileWriter(fileName);
+            //Escribimos la lista ordenada en el fichero.
+            for (Coche c : cocheList) {
+                fw.write(c.toString() + "\n");
+            }
+            fw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Lee un fichero CSV y lo muestra por pantalla.
+     *
+     * @throws IOException
+     */
+    public static String leerCSV(String nombreFichero) throws IOException {
+        BufferedReader br = new BufferedReader(new FileReader(nombreFichero));
+        String line = br.readLine();
+        String[] campos;
+        /*
+        Mientras línea no sea null, es decir, que haya líneas que leer
+        se ejecutará el bucle.
+         */
+        while (line != null) {
+            //Dividimos la línea por comas.
+            campos = line.split(",");
+            //Mostramos los campos.
+            System.out.println(campos[0] + " " + campos[1] + " " + campos[2]);
+            //Leemos la siguiente línea.
+            line = br.readLine();
+        }
+        //Cerramos el fichero.
+        br.close();
+        //Devolvemos la línea.
+        return line;
+    }
+
     public static void main(String[] args) {
 
-        try {
-            Map<String, Integer> datos = new HashMap<>();
-            datos.put("matricula", (int) BYTES_MATRICULA);
-            datos.put("modelo", (int) BYTES_MODELO);
-            datos.put("marca", (int) BYTES_MARCA);
-            Fichero fichero = new Fichero("coches.csv", datos, "matricula");
-            Coche coche = new Coche("Seat", "Ibiza", "1234ABC");
-            fichero.insetar(coche, 0, fichero.NUMBER_OF_BYTES);
-            Coche coche2 = new Coche("Seat", "Arona", "2345ABC");
-            fichero.insetar(coche2, 1, fichero.NUMBER_OF_BYTES);
-            Coche coche3 = new Coche("Seat", "Leon", "1684ABC");
-            fichero.insetar(coche3, 2, fichero.NUMBER_OF_BYTES);
-            Coche coche4 = new Coche("Seat", "Ateca", "6984ABC");
-            fichero.insetar(coche4, 3, fichero.NUMBER_OF_BYTES);
-            Coche coche5 = new Coche("Citroen", "Xsara", "3546LHF");
-            fichero.insetar(coche5, 4, fichero.NUMBER_OF_BYTES);
-        } catch (IOException ex) {
-            System.out.println(ex.getMessage());
-        }
+        boolean salir = false;
+        do {
+            System.out.println(menu());
+            System.out.println("Introduce una opción");
+            int opcion = Integer.parseInt(sc.nextLine());
+            switch (opcion) {
+                case 1:
+                    try {
+                        do {
+                            Map<String, Integer> datos = new HashMap<>();
+                            datos.put("matricula", (int) BYTES_MATRICULA);
+                            datos.put("modelo", (int) BYTES_MODELO);
+                            datos.put("marca", (int) BYTES_MARCA);
+                            Fichero fichero = new Fichero("coches.csv", datos, "matricula");
+                            int posicion = 0;
+                            System.out.println("Introduce la matrícula");
+                            String matricula = sc.nextLine();
+                            System.out.println("Introduce la marca");
+                            String marca = sc.nextLine();
+                            System.out.println("Introduce el modelo");
+                            String modelo = sc.nextLine();
+                            System.out.println("Introduce la posición donde quieres insertar el coche");
+                            posicion = Integer.parseInt(sc.nextLine());
+                            Coche coche = new Coche(marca, modelo, matricula);
+                            insetar(coche, posicion, NUMBER_OF_BYTES);
+                            System.out.println("Quieres seguir insertando coches? (s/n)");
+                        } while (sc.nextLine().equalsIgnoreCase("s"));
+
+
+                    } catch (IOException e) {
+                        System.err.println("Error al crear el fichero");
+                    }
+
+
+                    break;
+                case 2:
+                    System.out.println("Introduce la posición que quieres borrar");
+                    int posicion = Integer.parseInt(sc.nextLine());
+                    try {
+                        borrar(posicion);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case 3:
+                    System.out.println("Introduce la posición que quieres modificar");
+                    posicion = Integer.parseInt(sc.nextLine());
+                    System.out.println("Introduce la matrícula");
+                    String matricula = sc.nextLine();
+                    System.out.println("Introduce la marca");
+                    String marca = sc.nextLine();
+                    System.out.println("Introduce el modelo");
+                    String modelo = sc.nextLine();
+                    Coche coche = new Coche(marca, modelo, matricula);
+                    try {
+                        modificar(coche, posicion);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case 4:
+                    System.out.println("Introduce el fichero que quieres ordenar");
+                    String fichero = sc.nextLine();
+                    ordenarFichero(fichero);
+                    break;
+                case 5:
+                    System.out.println("Introduce el ficher que quieres leer");
+                    String ficheroLeer = sc.nextLine();
+                    try {
+                        leerCSV(ficheroLeer);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case 6:
+                    salir = true;
+                    break;
+            }
+        }while (!salir);
+    }
+
+    public static String menu() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("1. Insertar coche\n");
+        sb.append("2. Borrar coche\n");
+        sb.append("3. Modificar coche\n");
+        sb.append("4. Ordenar coches\n");
+        sb.append("5. Cargar coches\n");
+        sb.append("6. Salir\n");
+        return sb.toString();
     }
 }
