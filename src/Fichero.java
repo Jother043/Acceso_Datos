@@ -122,10 +122,12 @@ public class Fichero {
         return existe;
     }
 
-    public static void borrar(int posicion) throws IOException {
+    public static void borrar(int posicion, String fileName) throws IOException {
         RandomAccessFile raf = new RandomAccessFile(fileName, "rw");
         raf.seek((long) posicion * longitudRegistro);
-        raf.writeBytes(String.format("%-71s", ""));
+        raf.write("       ".getBytes());
+        raf.write("                                ".getBytes());
+        raf.write("                                ".getBytes());
         raf.close();
     }
 
@@ -138,14 +140,14 @@ public class Fichero {
         raf.close();
     }
 
-    public static void ordenarFichero(String fileName){
-        try {
+    public static void ordenarFichero(String fileName) throws IllegalArgumentException, IOException{
+
             BufferedReader br = new BufferedReader(new FileReader(fileName));
             String line = br.readLine();
             String[] campos;
             //Leemos el fichero y lo guardamos en una lista.
             while (line != null) {
-                campos = line.split(",");
+                campos = line.split(" ");
                 Coche coche = new Coche(campos[0], campos[1], campos[2]);
                 cocheList.add(coche);
                 line = br.readLine();
@@ -155,19 +157,20 @@ public class Fichero {
             Collections.sort(cocheList , new Comparator<Coche>() {
                 @Override
                 public int compare(Coche o1, Coche o2) {
+                    o1.getTuition().
                     return o1.getTuition().compareTo(o2.getTuition());
                 }
             });
             //Escribimos la lista ordenada en el fichero.
-            FileWriter fw = new FileWriter(fileName);
+            RandomAccessFile raf = new RandomAccessFile(fileName, "rw");
             //Escribimos la lista ordenada en el fichero.
             for (Coche c : cocheList) {
-                fw.write(c.toString() + "\n");
+                raf.write(c.getTuition().getBytes());
+                raf.write(c.getBrand().getBytes());
+                raf.write(c.getModel().getBytes());
             }
-            fw.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+            raf.close();
+
     }
 
     /**
@@ -202,8 +205,11 @@ public class Fichero {
         boolean salir = false;
         do {
             System.out.println(menu());
-            System.out.println("Introduce una opción");
+            System.out.println("Introduce una opción: ");
             int opcion = Integer.parseInt(sc.nextLine());
+            System.out.println("Has elegido la opción " + opcion);
+            System.out.println("Introduce el nombre del fichero");
+            String fileName = sc.nextLine();
             switch (opcion) {
                 case 1:
                     try {
@@ -212,7 +218,7 @@ public class Fichero {
                             datos.put("matricula", (int) BYTES_MATRICULA);
                             datos.put("modelo", (int) BYTES_MODELO);
                             datos.put("marca", (int) BYTES_MARCA);
-                            Fichero fichero = new Fichero("coches.csv", datos, "matricula");
+                            Fichero fichero = new Fichero(fileName, datos, "matricula");
                             int posicion = 0;
                             System.out.println("Introduce la matrícula");
                             String matricula = sc.nextLine();
@@ -238,7 +244,7 @@ public class Fichero {
                     System.out.println("Introduce la posición que quieres borrar");
                     int posicion = Integer.parseInt(sc.nextLine());
                     try {
-                        borrar(posicion);
+                        borrar(posicion,fileName);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -262,7 +268,11 @@ public class Fichero {
                 case 4:
                     System.out.println("Introduce el fichero que quieres ordenar");
                     String fichero = sc.nextLine();
-                    ordenarFichero(fichero);
+                    try {
+                        ordenarFichero(fichero);
+                    } catch (IOException e) {
+                        System.out.println(e.getMessage());
+                    }
                     break;
                 case 5:
                     System.out.println("Introduce el ficher que quieres leer");
