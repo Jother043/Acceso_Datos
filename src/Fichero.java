@@ -2,10 +2,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.io.*;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class Fichero {
     static Scanner sc = new Scanner(System.in);
     private static List<Coche> cocheList = new ArrayList<>();
-    private static  String fileName ;
+    private static String fileName;
     private final String campoClave;
     public static final byte BYTES_MATRICULA = 7;
     public static final byte BYTES_MODELO = 32;
@@ -100,9 +102,28 @@ public class Fichero {
             raf.close();
             //Lo utilizamos para saber lo que están repetidos.
         }
-
         cocheList.add(coche);
 
+        List<Coche> cocheList = new ArrayList<>();
+        BufferedReader br = new BufferedReader(new FileReader(fileName));
+        String line = br.readLine();
+        String[] campos;
+        //Leemos el fichero y lo guardamos en una lista.
+        while (line != null) {
+            campos = line.split(" ");
+            Coche c = new Coche(campos[0], campos[1], campos[2]);
+            cocheList.add(coche);
+            line = br.readLine();
+        }
+        br.close();
+        RandomAccessFile raf = new RandomAccessFile(fileName, "rw");
+        //Movemos los coches existente una posición.
+        for (int i = posicion; i < cocheList.size(); i++) {
+            raf.seek((long) i * longitudRegistro);
+            raf.write(cocheList.get(i).getTuition().getBytes());
+            raf.write(cocheList.get(i).getBrand().getBytes());
+            raf.write(cocheList.get(i).getModel().getBytes());
+        }
     }
 
     /**
@@ -140,36 +161,37 @@ public class Fichero {
         raf.close();
     }
 
-    public static void ordenarFichero(String fileName) throws IllegalArgumentException, IOException{
+    public static void ordenarFichero(String fileName) throws IllegalArgumentException, IOException {
 
-            BufferedReader br = new BufferedReader(new FileReader(fileName));
-            String line = br.readLine();
-            String[] campos;
-            //Leemos el fichero y lo guardamos en una lista.
-            while (line != null) {
-                campos = line.split(" ");
-                Coche coche = new Coche(campos[0], campos[1], campos[2]);
-                cocheList.add(coche);
-                line = br.readLine();
+        BufferedReader br = new BufferedReader(new FileReader(fileName));
+        String line = br.readLine();
+        String[] campos;
+        //Leemos el fichero y lo guardamos en una lista.
+        while (line != null) {
+            campos = line.split(" ");
+            Coche coche = new Coche(campos[0], campos[1], campos[2]);
+            cocheList.add(coche);
+            line = br.readLine();
+        }
+        br.close();
+        //Ordenamos la lista por matrícula con una clase anónima.
+        Collections.sort(cocheList, new Comparator<Coche>() {
+            @Override
+            public int compare(Coche o1, Coche o2) {
+                int matricula1 = Integer.parseInt(o1.getTuition());
+                int matricula2 = Integer.parseInt(o2.getTuition());
+                return matricula1 - matricula2;
             }
-            br.close();
-            //Ordenamos la lista por matrícula con una clase anónima.
-            Collections.sort(cocheList , new Comparator<Coche>() {
-                @Override
-                public int compare(Coche o1, Coche o2) {
-                    o1.getTuition().
-                    return o1.getTuition().compareTo(o2.getTuition());
-                }
-            });
-            //Escribimos la lista ordenada en el fichero.
-            RandomAccessFile raf = new RandomAccessFile(fileName, "rw");
-            //Escribimos la lista ordenada en el fichero.
-            for (Coche c : cocheList) {
-                raf.write(c.getTuition().getBytes());
-                raf.write(c.getBrand().getBytes());
-                raf.write(c.getModel().getBytes());
-            }
-            raf.close();
+        });
+        //Escribimos la lista ordenada en el fichero.
+        RandomAccessFile raf = new RandomAccessFile("CochesCargados.txt", "rw");
+        //Escribimos la lista ordenada en el fichero.
+        for (Coche c : cocheList) {
+            raf.write(c.getTuition().getBytes());
+            raf.write(c.getBrand().getBytes());
+            raf.write(c.getModel().getBytes());
+        }
+        raf.close();
 
     }
 
@@ -178,7 +200,8 @@ public class Fichero {
      *
      * @throws IOException
      */
-    public static String leerCSV(String nombreFichero) throws IOException {
+    public static void leerCSV(String nombreFichero) throws IOException {
+        List<Coche> cocheList = new ArrayList<>();
         BufferedReader br = new BufferedReader(new FileReader(nombreFichero));
         String line = br.readLine();
         String[] campos;
@@ -189,15 +212,42 @@ public class Fichero {
         while (line != null) {
             //Dividimos la línea por comas.
             campos = line.split(",");
-            //Mostramos los campos.
-            System.out.println(campos[0] + " " + campos[1] + " " + campos[2]);
+            if (!(campos[0].equals("Matricula") || campos[1].equals("Marca") || campos[2].equals("Modelo"))) {
+                //Mostramos los campos.
+                System.out.println(campos[0] + " " + campos[1] + " " + campos[2]);
+                //Creamos un coche con los campos que hemos leido.
+                Coche coche = new Coche(campos[0], campos[1], campos[2]);
+                //Añadimos el coche a la lista.
+                cocheList.add(coche);
+
+            }
             //Leemos la siguiente línea.
             line = br.readLine();
         }
         //Cerramos el fichero.
         br.close();
-        //Devolvemos la línea.
-        return line;
+        //Escribimos el resultado que hemos leido en un fichero csv.
+        RandomAccessFile raf = new RandomAccessFile("CochesCargados.csv", "rw");
+
+        for (Coche c : cocheList) {
+            if (c.getTuition().getBytes().length > BYTES_MATRICULA) {
+                throw new IllegalArgumentException("La matrícula no puede tener más de 7 bytes");
+            } else if (c.getModel().getBytes().length > BYTES_MODELO) {
+                throw new IllegalArgumentException("El modelo no puede tener más de 32 bytes");
+            } else if (c.getBrand().getBytes().length > BYTES_MARCA) {
+                throw new IllegalArgumentException("La marca no puede tener más de 32 bytes");
+            } else {
+                //si no es mayor lo rellenamos con espacios en blanco.
+                c.setTuition(String.format("%-7s", c.getTuition()));
+                c.setModel(String.format("%-32s", c.getModel()));
+                c.setBrand(String.format("%-32s", c.getBrand()));
+            }
+            raf.write(c.getTuition().getBytes());
+            raf.write(c.getBrand().getBytes());
+            raf.write(c.getModel().getBytes());
+        }
+        raf.close();
+
     }
 
     public static void main(String[] args) {
@@ -244,7 +294,7 @@ public class Fichero {
                     System.out.println("Introduce la posición que quieres borrar");
                     int posicion = Integer.parseInt(sc.nextLine());
                     try {
-                        borrar(posicion,fileName);
+                        borrar(posicion, fileName);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -287,7 +337,7 @@ public class Fichero {
                     salir = true;
                     break;
             }
-        }while (!salir);
+        } while (!salir);
     }
 
     public static String menu() {
