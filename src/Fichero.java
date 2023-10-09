@@ -1,8 +1,6 @@
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.io.*;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class Fichero {
     static Scanner sc = new Scanner(System.in);
@@ -20,9 +18,9 @@ public class Fichero {
         return fileName;
     }
 
-
+    // Constructor
     public Fichero(String fileName, Map<String, Integer> datos, String campoClave) throws IOException {
-        this.fileName = fileName;
+        Fichero.fileName = fileName;
         this.campoClave = campoClave;
         longitudRegistro = 0;
         numeroRegistros = 0;
@@ -66,8 +64,7 @@ public class Fichero {
      * @param numeroBytes
      * @throws IOException
      */
-    public static void insetar(Coche coche, int posicion, int numeroBytes) throws IOException {
-
+    public static void insertar(Coche coche, int posicion, int numeroBytes) throws IOException {
 
         if (posicion < 0) {
             throw new IllegalArgumentException("La posición no es válida");
@@ -76,19 +73,9 @@ public class Fichero {
         } else if (coche == null) {
             throw new IllegalArgumentException("El coche no puede ser null");
         }
-        //Comprobamos que la longitud de los campos no sea mayor que la longitud de los bytes.
-        if (coche.getTuition().getBytes().length > BYTES_MATRICULA) {
-            throw new IllegalArgumentException("La matrícula no puede tener más de 7 bytes");
-        } else if (coche.getModel().getBytes().length > BYTES_MODELO) {
-            throw new IllegalArgumentException("El modelo no puede tener más de 32 bytes");
-        } else if (coche.getBrand().getBytes().length > BYTES_MARCA) {
-            throw new IllegalArgumentException("La marca no puede tener más de 32 bytes");
-        } else {
-            //si no es mayor lo rellenamos con espacios en blanco.
-            coche.setTuition(String.format("%-7s", coche.getTuition()));
-            coche.setModel(String.format("%-32s", coche.getModel()));
-            coche.setBrand(String.format("%-32s", coche.getBrand()));
-        }
+
+        // Comprobamos que la longitud de los campos no sea mayor que la longitud de los bytes.
+        Validaciones(coche);
 
         //Leemos el fichero y guardamos el contenido en una lista de la clase coche.
         BufferedReader br = new BufferedReader(new FileReader(fileName));
@@ -107,16 +94,35 @@ public class Fichero {
         if (existeCoche(coche)) {
             System.err.println("El coche ya existe");
         } else {
+<<<<<<< HEAD
             //Nos posicionamos en la posición que queremos insertar el registro.
+=======
+            RandomAccessFile raf = new RandomAccessFile(fileName, "rw");
+            int numCoches = (int) raf.length() / longitudRegistro;
+
+            if (posicion < numCoches) {
+                // Mover los coches existentes una posición hacia adelante
+                for (int i = numCoches - 1; i >= posicion; i--) {
+                    raf.seek((long) i * longitudRegistro);
+                    byte[] buffer = new byte[longitudRegistro];
+                    raf.read(buffer);
+                    raf.seek((long) (i + 1) * longitudRegistro);
+                    raf.write(buffer);
+                }
+            }
+
+            // Escribir el nuevo coche en la posición deseada
+>>>>>>> 2fa77d1686da979e68be2c094a740d794526d641
             raf.seek((long) posicion * longitudRegistro);
             raf.write(coche.getTuition().getBytes());
             raf.write(coche.getBrand().getBytes());
             raf.write(coche.getModel().getBytes());
-            raf.close();
-            //Lo utilizamos para saber lo que están repetidos.
-        }
-        cocheList.add(coche);
 
+            raf.close();
+        }
+    }
+
+<<<<<<< HEAD
         br.close();
         //Movemos los coches existente una posición.
         for (int i = posicion; i < cocheList.size(); i++) {
@@ -124,11 +130,33 @@ public class Fichero {
             raf.write(cocheList.get(i).getTuition().getBytes());
             raf.write(cocheList.get(i).getBrand().getBytes());
             raf.write(cocheList.get(i).getModel().getBytes());
+=======
+    /**
+     * Comprueba que la longitud de los campos no sea mayor que la longitud de los bytes.
+     * Si es mayor lanza una excepción.
+     * Si no es mayor rellena los campos con espacios en blanco.
+     *
+     * @param coche
+     */
+    private static void Validaciones(Coche coche) {
+        if (coche.getTuition().getBytes().length > BYTES_MATRICULA) {
+            throw new IllegalArgumentException("La matrícula no puede tener más de 7 bytes");
+        } else if (coche.getModel().getBytes().length > BYTES_MODELO) {
+            throw new IllegalArgumentException("El modelo no puede tener más de 32 bytes");
+        } else if (coche.getBrand().getBytes().length > BYTES_MARCA) {
+            throw new IllegalArgumentException("La marca no puede tener más de 32 bytes");
+        } else {
+            // Si no es mayor, lo rellenamos con espacios en blanco.
+            coche.setTuition(String.format("%-7s", coche.getTuition()));
+            coche.setModel(String.format("%-32s", coche.getModel()));
+            coche.setBrand(String.format("%-32s", coche.getBrand()));
+>>>>>>> 2fa77d1686da979e68be2c094a740d794526d641
         }
         raf.close();
     }
 
 
+<<<<<<< HEAD
         /*
         //Comprobamos si el coche existe.
         if (existeCoche(coche)) {
@@ -156,6 +184,8 @@ public class Fichero {
 
     //}
 
+=======
+>>>>>>> 2fa77d1686da979e68be2c094a740d794526d641
     /**
      * Comprueba si un coche existe en el fichero.
      *
@@ -173,6 +203,12 @@ public class Fichero {
         return existe;
     }
 
+    /**
+     * Borra un coche del fichero.
+     *
+     * @param posicion Posición del coche que queremos borrar.
+     * @throws IOException
+     */
     public static void borrar(int posicion, String fileName) throws IOException {
         RandomAccessFile raf = new RandomAccessFile(fileName, "rw");
         raf.seek((long) posicion * longitudRegistro);
@@ -182,15 +218,37 @@ public class Fichero {
         raf.close();
     }
 
-    public static void modificar(Coche coche, int posicion) throws IOException {
+    /**
+     * Modifica un coche del fichero.
+     *
+     * @param coche    Coche que queremos modificar.
+     * @param posicion Posición del coche que queremos modificar.
+     * @throws IOException
+     */
+    public static void modificar(Coche coche, int posicion, String fileName) throws IOException {
+        //si la posicion no es valida lanza una excepcion
+        if (posicion < 0 || posicion > numeroRegistros) {
+            throw new IllegalArgumentException("La posición no es válida");
+        }
+        // Comprobamos que la longitud de los campos no sea mayor que la longitud de los bytes.
+        Validaciones(coche);
+
         RandomAccessFile raf = new RandomAccessFile(fileName, "rw");
         raf.seek((long) posicion * longitudRegistro);
         raf.write(coche.getTuition().getBytes());
         raf.write(coche.getBrand().getBytes());
         raf.write(coche.getModel().getBytes());
         raf.close();
+
     }
 
+    /**
+     * Ordena un fichero por matrícula usando una clase anónima.
+     *
+     * @param fileName Nombre del fichero que queremos ordenar.
+     * @throws IllegalArgumentException
+     * @throws IOException
+     */
     public static void ordenarFichero(String fileName) throws IllegalArgumentException, IOException {
 
         BufferedReader br = new BufferedReader(new FileReader(fileName));
@@ -205,7 +263,7 @@ public class Fichero {
         }
         br.close();
         //Ordenamos la lista por matrícula con una clase anónima.
-        Collections.sort(cocheList, new Comparator<Coche>() {
+        cocheList.sort(new Comparator<Coche>() {
             @Override
             public int compare(Coche o1, Coche o2) {
                 int matricula1 = Integer.parseInt(o1.getTuition());
@@ -217,6 +275,7 @@ public class Fichero {
         RandomAccessFile raf = new RandomAccessFile("CochesCargados.txt", "rw");
         //Escribimos la lista ordenada en el fichero.
         for (Coche c : cocheList) {
+            Validaciones(c);
             raf.write(c.getTuition().getBytes());
             raf.write(c.getBrand().getBytes());
             raf.write(c.getModel().getBytes());
@@ -227,7 +286,8 @@ public class Fichero {
 
     /**
      * Lee un fichero CSV y lo muestra por pantalla.
-     *
+     * También escribe el resultado en un fichero csv.
+     * @param nombreFichero
      * @throws IOException
      */
     public static void leerCSV(String nombreFichero) throws IOException {
@@ -260,18 +320,7 @@ public class Fichero {
         RandomAccessFile raf = new RandomAccessFile("CochesCargados.csv", "rw");
 
         for (Coche c : cocheList) {
-            if (c.getTuition().getBytes().length > BYTES_MATRICULA) {
-                throw new IllegalArgumentException("La matrícula no puede tener más de 7 bytes");
-            } else if (c.getModel().getBytes().length > BYTES_MODELO) {
-                throw new IllegalArgumentException("El modelo no puede tener más de 32 bytes");
-            } else if (c.getBrand().getBytes().length > BYTES_MARCA) {
-                throw new IllegalArgumentException("La marca no puede tener más de 32 bytes");
-            } else {
-                //si no es mayor lo rellenamos con espacios en blanco.
-                c.setTuition(String.format("%-7s", c.getTuition()));
-                c.setModel(String.format("%-32s", c.getModel()));
-                c.setBrand(String.format("%-32s", c.getBrand()));
-            }
+            Validaciones(c);
             raf.write(c.getTuition().getBytes());
             raf.write(c.getBrand().getBytes());
             raf.write(c.getModel().getBytes());
@@ -309,7 +358,7 @@ public class Fichero {
                             System.out.println("Introduce la posición donde quieres insertar el coche");
                             posicion = Integer.parseInt(sc.nextLine());
                             Coche coche = new Coche(marca, modelo, matricula);
-                            insetar(coche, posicion, NUMBER_OF_BYTES);
+                            insertar(coche, posicion, NUMBER_OF_BYTES);
                             System.out.println("Quieres seguir insertando coches? (s/n)");
                         } while (sc.nextLine().equalsIgnoreCase("s"));
 
@@ -330,19 +379,24 @@ public class Fichero {
                     }
                     break;
                 case 3:
-                    System.out.println("Introduce la posición que quieres modificar");
-                    posicion = Integer.parseInt(sc.nextLine());
-                    System.out.println("Introduce la matrícula");
-                    String matricula = sc.nextLine();
-                    System.out.println("Introduce la marca");
-                    String marca = sc.nextLine();
-                    System.out.println("Introduce el modelo");
-                    String modelo = sc.nextLine();
-                    Coche coche = new Coche(marca, modelo, matricula);
                     try {
-                        modificar(coche, posicion);
+                        Map<String, Integer> datos = new HashMap<>();
+                        datos.put("matricula", (int) BYTES_MATRICULA);
+                        datos.put("modelo", (int) BYTES_MODELO);
+                        datos.put("marca", (int) BYTES_MARCA);
+                        Fichero fichero = new Fichero(fileName, datos, "matricula");
+                        System.out.println("Introduce la posición que quieres modificar");
+                        posicion = Integer.parseInt(sc.nextLine());
+                        System.out.println("Introduce la matrícula");
+                        String matricula = sc.nextLine();
+                        System.out.println("Introduce la marca");
+                        String marca = sc.nextLine();
+                        System.out.println("Introduce el modelo");
+                        String modelo = sc.nextLine();
+                        Coche coche = new Coche(marca, modelo, matricula);
+                        modificar(coche, posicion, fileName);
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        System.out.println(e.getMessage());
                     }
                     break;
                 case 4:
