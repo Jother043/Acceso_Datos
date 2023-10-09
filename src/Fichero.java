@@ -90,10 +90,23 @@ public class Fichero {
             coche.setBrand(String.format("%-32s", coche.getBrand()));
         }
 
+        //Leemos el fichero y guardamos el contenido en una lista de la clase coche.
+        BufferedReader br = new BufferedReader(new FileReader(fileName));
+        RandomAccessFile raf = new RandomAccessFile(fileName, "rw");
+        LinkedList<Coche> cocheList = new LinkedList<>();
+        String line;
+        //Leemos el csv desde una posición más de la introducida por el usuario hasta el final.
+        while ((line = br.readLine()) != null) {
+            raf.seek((long) (posicion + 1) * longitudRegistro);
+            String[] datos = line.split(" ");
+            Coche c = new Coche(datos[0], datos[1], datos[2]);
+            cocheList.add(c);
+        }
+
+        //Comprobamos si el coche existe.
         if (existeCoche(coche)) {
             System.err.println("El coche ya existe");
         } else {
-            RandomAccessFile raf = new RandomAccessFile(fileName, "rw");
             //Nos posicionamos en la posición que queremos insertar el registro.
             raf.seek((long) posicion * longitudRegistro);
             raf.write(coche.getTuition().getBytes());
@@ -104,19 +117,7 @@ public class Fichero {
         }
         cocheList.add(coche);
 
-        List<Coche> cocheList = new ArrayList<>();
-        BufferedReader br = new BufferedReader(new FileReader(fileName));
-        String line = br.readLine();
-        String[] campos;
-        //Leemos el fichero y lo guardamos en una lista.
-        while (line != null) {
-            campos = line.split(" ");
-            Coche c = new Coche(campos[0], campos[1], campos[2]);
-            cocheList.add(coche);
-            line = br.readLine();
-        }
         br.close();
-        RandomAccessFile raf = new RandomAccessFile(fileName, "rw");
         //Movemos los coches existente una posición.
         for (int i = posicion; i < cocheList.size(); i++) {
             raf.seek((long) i * longitudRegistro);
@@ -124,7 +125,36 @@ public class Fichero {
             raf.write(cocheList.get(i).getBrand().getBytes());
             raf.write(cocheList.get(i).getModel().getBytes());
         }
+        raf.close();
     }
+
+
+        /*
+        //Comprobamos si el coche existe.
+        if (existeCoche(coche)) {
+            System.err.println("El coche ya existe");
+        } else {
+            //Nos posicionamos en la posición que queremos insertar el registro.
+            raf.seek((long) posicion * longitudRegistro);
+            raf.write(coche.getTuition().getBytes());
+            raf.write(coche.getBrand().getBytes());
+            raf.write(coche.getModel().getBytes());
+            raf.close();
+            //Lo utilizamos para saber lo que están repetidos.
+        }
+        cocheList.add(coche);
+
+        br.close();
+        //Movemos los coches existente una posición.
+        for (int i = posicion; i < cocheList.size(); i++) {
+            raf.seek((long) i * longitudRegistro);
+            raf.write(cocheList.get(i).getTuition().getBytes());
+            raf.write(cocheList.get(i).getBrand().getBytes());
+            raf.write(cocheList.get(i).getModel().getBytes());
+        }*/
+
+
+    //}
 
     /**
      * Comprueba si un coche existe en el fichero.
