@@ -45,7 +45,7 @@ public class Coche {
 
     @Override
     public String toString() {
-        return "Coche{" + "brand=" + brand + ", model=" + model + ", tuition=" + tuition + '}';
+        return "Coche " + "brand: " + brand + " model: " + model + " tuition: " + tuition + '\n';
     }
 
     @Override
